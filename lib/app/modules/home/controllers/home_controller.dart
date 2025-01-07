@@ -22,6 +22,8 @@ class HomeController extends GetxController {
 
   var shouldListen = false;
 
+  var startShowingGraph = false;
+
 
   var dataController= SecondSampleController();
 
@@ -53,6 +55,12 @@ class HomeController extends GetxController {
     });
   }
 
+
+  void toggleStartStop() {
+    startShowingGraph = !startShowingGraph;
+update();
+
+  }
   void showNoBlueToothDilouge(){
 
     if(FlutterBluePlus.isOn==false){
@@ -80,21 +88,22 @@ class HomeController extends GetxController {
     int endIndex = (index + 1) % maxTimeStamps;
     print('end $endIndex');
     print('start $startIndex');
+
+    print(yAxisValues.length);
     if (yAxisValues.length < maxTimeStamps) {
-      // Append new Y values until buffer is full
       yAxisValues.add(value);
-      chartColors.add(Colors.blue); // Default color for new data
+      chartColors.add(Colors.blue);
     } else {
-      // Overwrite only the Y-axis value and update the index
       yAxisValues[index] = value;
       index = (index + 1) % maxTimeStamps;
     }
 
-    // Keep only the latest `maxWindowSize` data points
     if (chartData.length > maxTimeStamps  ) {
       chartData.removeRange(0, chartData.length - maxTimeStamps);
     }
 
+
+    //for color
     for (int i = 10; i < yAxisValues.length; i++) {
       if ((startIndex <= endIndex && i >= startIndex && i <= endIndex) ||
           (startIndex > endIndex && (i >= startIndex || i <= endIndex))) {

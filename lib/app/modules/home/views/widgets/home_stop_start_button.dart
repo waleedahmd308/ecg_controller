@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../controllers/home_controller.dart';
 
 class HomeStopStartButton extends StatelessWidget {
   const HomeStopStartButton({
     super.key,
   });
 
+
   @override
   Widget build(BuildContext context) {
+
+    var ecgController = Get.find<HomeController>();
     return GestureDetector(
       onTap: () {
-        // ecgController.timer.cancel();
+         ecgController.toggleStartStop();
+
       },
       child: Container(
         width: 60,
