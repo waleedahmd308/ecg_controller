@@ -36,7 +36,15 @@ class HomeStopStartButton extends StatelessWidget {
 
           shape: BoxShape.circle,
         ),
-        child: Icon(
+        child:
+        ecgController.startShowingGraph
+            ? Icon(
+                Icons.play_arrow,
+                size: 40,
+                color: Colors.white,
+              )
+            :
+        Icon(
           Icons.stop,
           size: 40,
           color: Colors.white,

@@ -22,6 +22,9 @@ class HomeView extends StatelessWidget {
               ? CircularProgressIndicator()
               : IconButton(
                   onPressed: () async {
+                    if(ecgController.deviceConnected){
+
+                      await ecgController.disconnectDevice();}
                     await ecgController.startScan(); // Initiate scanning
                     // Get.to(() => SecondSampleView()); // Add a function to refresh the page
                     // Add a function to disconnect the device
@@ -51,27 +54,8 @@ class HomeView extends StatelessWidget {
             child: GetBuilder(
               init: ecgController,
               builder: (HomeController controller) {
-                int currentDataCount = ecgController.yAxisValues.length;
-                double percentage = (currentDataCount / ecgController.maxTimeStamps) * 100;
-
-                print("Current data count: $currentDataCount");
-                print("Max data count: ${percentage}");
-
                 return
-                  currentDataCount<ecgController.maxTimeStamps?Container(
-                    height: 290,
-                    width: MediaQuery.of(context).size.width,
-                    child: Center(
-                      child: Text(
-                        "Loading: ${percentage.toStringAsFixed(0)}%",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ),
-                  ):Container(
+                ecgController.deviceConnected?ecgController.showingLoader?Center(child: Text('Loading')): Container(
                   height: 180,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
@@ -93,12 +77,21 @@ class HomeView extends StatelessWidget {
 
                     primaryYAxis: NumericAxis(
                       isVisible:
-                          false, // You may comment this out if you want to adjust the Y-axis settings
+                          true, // You may comment this out if you want to adjust the Y-axis settings
                       majorGridLines: MajorGridLines(
                           width: 0), // Hides horizontal grid lines
+                      title: AxisTitle(
+                        text: 'Voltage (V)', // Title for Y-axis
+                        textStyle: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
+
                     legend: Legend(
-                      isVisible: true,
+                      isVisible: false,
                     ),
                     series: [
                       // Current iteration series (on top)
@@ -122,6 +115,10 @@ class HomeView extends StatelessWidget {
                     child: Center(
                       child: Text("Press Start to view ECG Graph"),
                     ),
+                  ),
+                ):Container(
+                  child: Center(
+                    child: Text("Connect to a device to view ECG Graph"),
                   ),
                 );
               },

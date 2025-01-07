@@ -22,7 +22,8 @@ class HomeController extends GetxController {
 
   var shouldListen = false;
 
-  var startShowingGraph = false;
+  var startShowingGraph = true;
+  var showingLoader=false;
 
 
   var dataController= SecondSampleController();
@@ -46,6 +47,7 @@ class HomeController extends GetxController {
     // chartData.addAll(generateRandomChartData());
     // chartData2.addAll(generateRandomChartData());
     showNoBlueToothDilouge();
+    loader=false;
 
 
     //startAnimation();
@@ -57,8 +59,20 @@ class HomeController extends GetxController {
 
 
   void toggleStartStop() {
+     
+    //add timeout for 5 seconds
+    if(startShowingGraph==false){
+      showingLoader=true;
+
+      update();
+      Future.delayed(Duration(seconds: 3), () {
+        showingLoader=!showingLoader;
+      });
+    }
+
+    
     startShowingGraph = !startShowingGraph;
-update();
+    update();
 
   }
   void showNoBlueToothDilouge(){
@@ -73,7 +87,7 @@ update();
 
   }
   int index=0;
-  final int maxTimeStamps=500;
+  final int maxTimeStamps=250;
   List<Color> chartColors = [];
 
 
@@ -172,6 +186,16 @@ update();
 
       FlutterBluePlus.startScan(timeout: Duration(seconds: 15));
       showBondedDevices();
+      FlutterBluePlus.scanResults.listen((List<ScanResult> results) {
+        for (ScanResult result in results) {
+          BluetoothDevice device = result.device;
+// Avoid duplicates and add the device to the list
+          if (!devicesList.contains(device)) {
+            devicesList.add(device);
+            update(); // Update UI
+          }
+        }
+      });
         _showDeviceSelectionBottomSheet(context);
     } else {
       print("Required permissions not granted");
@@ -183,12 +207,24 @@ update();
 
 
 
+  Future<void> disconnectDevice() async {
+
+    BuildContext context=Get.context!;
+    //showStyledDialog('Alert', 'Do you realy want to disconnect the app?', context, true);
+    if (connectedDevice != null) {
+      await connectedDevice!.disconnect();
+      connectedDevice = null;
+      deviceConnected=false;
+
+      update();
+    }
+  }
   Future<void> connectToDevice(BluetoothDevice device) async {
     // loader=true;
-    update();
-    try{
-    await device.connect();
-    // loader=false;
+    // update();
+    // try{
+     await device.connect();
+     loader=false;
     update();
     connectedDevice = device;
 
@@ -209,17 +245,21 @@ update();
       }
     }
     connectAndListenToDevice();
-    }catch(e){
-      Get.snackbar('Error', 'Error connecting to ${device.name}');
-
-    }
+    // }catch(e){
+    //   Get.snackbar('Error', 'Error connecting to ${device.name}');
+    //   loader=false;
+    //
+    // }
    }
 
   Future<void> connectAndListenToDevice() async {
+
+    print(' values it shi $targetCharacteristic');
     if (targetCharacteristic == null) {
       print("No target characteristic found.");
       return;
     }
+    print(targetCharacteristic);
     try {
 
       await targetCharacteristic!.setNotifyValue(true);
