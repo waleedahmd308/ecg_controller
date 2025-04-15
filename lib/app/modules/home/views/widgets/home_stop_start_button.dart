@@ -13,35 +13,48 @@ class HomeStopStartButton extends StatelessWidget {
   Widget build(BuildContext context) {
 
     var ecgController = Get.find<HomeController>();
-    return GestureDetector(
-      onTap: () {
-         ecgController.toggleStartStop();
+    return GetBuilder(
+      init: ecgController,
+      builder: (controller) {
+        return ecgController.deviceConnected? GestureDetector(
+          onTap: () {
+             ecgController.toggleStartStop();
 
-      },
-      child: Container(
-        width: 60,
-        margin: EdgeInsets.only(top: 20),
-        height: 60,
-        decoration: BoxDecoration(
-          //add shadow
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: Offset(-1, 3), // changes position of shadow
+          },
+          child: Container(
+            width: 60,
+            margin: EdgeInsets.only(top: 20),
+            height: 60,
+            decoration: BoxDecoration(
+              //add shadow
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(-1, 3), // changes position of shadow
+                ),
+              ],
+              color: Colors.lightBlueAccent,
+
+              shape: BoxShape.circle,
             ),
-          ],
-          color: Colors.lightBlueAccent,
-
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.stop,
-          size: 40,
-          color: Colors.white,
-        ),
-      ),
+            child:
+            ecgController.startShowingGraph
+                ? Icon(
+                    Icons.stop,
+                    size: 40,
+                    color: Colors.white,
+                  )
+                :
+            Icon(
+              Icons.play_arrow,
+              size: 40,
+              color: Colors.white,
+            ),
+          ),
+        ):Container();
+      }
     );
   }
 }

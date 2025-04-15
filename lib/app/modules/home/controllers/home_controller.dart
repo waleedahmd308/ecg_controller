@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:e_c_g_blue_tooth/app/modules/SecondSample/controllers/second_sample_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -18,11 +19,14 @@ class HomeController extends GetxController {
   List<BluetoothDevice> devicesList = <BluetoothDevice>[];
   bool loader = false;
   bool deviceConnected = false;
+
+  var dataTest = [];
   List<int> data=[];
 
   var shouldListen = false;
 
-  var startShowingGraph = false;
+  var startShowingGraph = true;
+  var showingLoader=false;
 
 
   var dataController= SecondSampleController();
@@ -46,6 +50,7 @@ class HomeController extends GetxController {
     // chartData.addAll(generateRandomChartData());
     // chartData2.addAll(generateRandomChartData());
     showNoBlueToothDilouge();
+    loader=false;
 
 
     //startAnimation();
@@ -53,12 +58,24 @@ class HomeController extends GetxController {
 
       update();
     });
+    //startFakeStream();
   }
 
 
   void toggleStartStop() {
+     
+    if(startShowingGraph==false){
+      showingLoader=true;
+
+      update();
+      Future.delayed(Duration(seconds: 2), () {
+        showingLoader=!showingLoader;
+      });
+    }
+
+    
     startShowingGraph = !startShowingGraph;
-update();
+    update();
 
   }
   void showNoBlueToothDilouge(){
@@ -73,7 +90,7 @@ update();
 
   }
   int index=0;
-  final int maxTimeStamps=500;
+  final int maxTimeStamps=250;
   List<Color> chartColors = [];
 
 
@@ -86,10 +103,7 @@ update();
     }
     int startIndex = index;
     int endIndex = (index + 1) % maxTimeStamps;
-    print('end $endIndex');
-    print('start $startIndex');
 
-    print(yAxisValues.length);
     if (yAxisValues.length < maxTimeStamps) {
       yAxisValues.add(value);
       chartColors.add(Colors.blue);
@@ -171,7 +185,17 @@ update();
       update();
 
       FlutterBluePlus.startScan(timeout: Duration(seconds: 15));
-      showBondedDevices();
+      // showBondedDevices();
+      FlutterBluePlus.scanResults.listen((List<ScanResult> results) {
+        for (ScanResult result in results) {
+          BluetoothDevice device = result.device;
+// Avoid duplicates and add the device to the list
+          if (!devicesList.contains(device)) {
+            devicesList.add(device);
+            update(); // Update UI
+          }
+        }
+      });
         _showDeviceSelectionBottomSheet(context);
     } else {
       print("Required permissions not granted");
@@ -183,41 +207,115 @@ update();
 
 
 
+  Future<void> disconnectDevice() async {
+
+    BuildContext context=Get.context!;
+    //showStyledDialog('Alert', 'Do you realy want to disconnect the app?', context, true);
+    if (connectedDevice != null) {
+      await connectedDevice!.disconnect();
+      connectedDevice = null;
+      deviceConnected=false;
+      startShowingGraph=false;
+      update();
+    }
+  }
+  String getServices='';
+  BluetoothCharacteristic? ackCharacteristic;
   Future<void> connectToDevice(BluetoothDevice device) async {
     // loader=true;
-    update();
-    try{
-    await device.connect();
-    // loader=false;
+    // update();
+    // try{
+     await device.connect();
+    loader=false;
     update();
     connectedDevice = device;
+    startShowingGraph=true;
 
-    // show dilog
+  // show dilog
     Get.snackbar('Success', 'Connected to ${device.name}');
+     // int mtu = await device.requestMtu(245);
+     // AlertDialog(
+     //   title: Text('MTU requested'),
+     //   content: Text('MTU requested: $mtu'),
+     // );
+
     deviceConnected=true;
     update();
     List<BluetoothService> services = await device.discoverServices();
     print('Discovered services: $services');
-    for (var service in services) {
-      for (var characteristic in service.characteristics) {
-
-        if(characteristic.properties.read){
-          targetCharacteristic = characteristic;
-          print('Characteristic found: ${targetCharacteristic!}');
-          break;
-        }
-      }
-    }
+   // getServices=services.toString();
+    update();
+     for (var service in services) {
+       for (var characteristic in service.characteristics) {
+         final uuid = characteristic.uuid.toString().toLowerCase();
+         if (uuid  == '19b10001-e8f2-537e-4f6c-d104768a1214') {
+           targetCharacteristic = characteristic;
+           print('Target characteristic set: ${targetCharacteristic!.uuid}');
+           break;
+         }
+         else if (uuid == '19b10002-e8f2-537e-4f6c-d104768a1214') {
+           ackCharacteristic = characteristic;
+           print('📤 Ack Characteristic set: ${characteristic.uuid}');
+         }
+       }
+       if (targetCharacteristic != null) break;
+     }
     connectAndListenToDevice();
-    }catch(e){
-      Get.snackbar('Error', 'Error connecting to ${device.name}');
 
-    }
    }
+  //int fakePacketId = 1;
+  // Map<String, dynamic> generateFakePacket(int id) {
+  //   Random random = Random();
+  //   List<double> sValues = List.generate(31, (_) => double.parse((random.nextDouble() * 0.3).toStringAsFixed(3)));
+  //
+  //   return {
+  //     "id": id,
+  //     "s": sValues,
+  //   };
+  // }
+  // void handleIncomingData(String receivedString) {
+  //   try {
+  //     Map<String, dynamic> jsonData = jsonDecode(receivedString);
+  //     List<dynamic> signalValues = jsonData['s'];
+  //
+  //     for (var i = 0; i < signalValues.length; i++) {
+  //       double val = signalValues[i].toDouble();
+  //       cycleDataEnhance(globalTime, val);
+  //       print('⏱ Sending to graph: Time = $globalTime, Value = $val');
+  //       globalTime += 0.4;
+  //     }
+  //   } catch (e) {
+  //     print('❌ Error parsing data: $e');
+  //   }
+  // }
+  // void startFakeStream() {
+  //   Timer.periodic(Duration(seconds: 1), (timer) {
+  //     Map<String, dynamic> fakePacket = generateFakePacket(fakePacketId);
+  //     String fakeJson = jsonEncode(fakePacket);
+  //
+  //     print('📦 Simulated Packet: $fakeJson');
+  //
+  //     // Simulate what the real listener does
+  //     handleIncomingData(fakeJson);
+  //
+  //     fakePacketId++;
+  //   });
+  // }
+  double globalTime = 0.0;
+  String pakcetLossText='🔵 No Raw Received (testing)';
+
+  int previousPacketId = -1; // initialize with an invalid starting value
+  int lostPacketCount = 0;
 
   Future<void> connectAndListenToDevice() async {
+
+
     if (targetCharacteristic == null) {
       print("No target characteristic found.");
+      AlertDialog(
+        title: Text('Error'),
+        content: Text('No target characteristic found.'),
+      );
       return;
     }
     try {
@@ -225,28 +323,80 @@ update();
       await targetCharacteristic!.setNotifyValue(true);
 
       targetCharacteristic!.onValueReceived.listen((value) async {
-        String receivedData = utf8.decode(value);
-        String cleanedData = receivedData.replaceAll(RegExp(r'[\[\]]'), '');
-        List<String> packets = cleanedData.split('),(');
-        double? timeStamp;
-        double? voltage;
-        for(var packet in packets){
-          String cleanedObject = packet.replaceAll(RegExp(r'[()]'), '');
-          List<String> values = cleanedObject.split(',');
-             if(values.length==2){
-                timeStamp = double.tryParse(values[0].trim());
-                voltage = double.tryParse(values[1].trim());
-                 if (timeStamp != null && voltage != null) {
-                    cycleDataEnhance(timeStamp,voltage);
-                 } else {
-                    print('Error parsing packet: $cleanedObject');
-                 }
-             }
+         String receivedString = utf8.decode(value);
+        print('🔵 Raw Received: $value');
+        List<String> get=[];
+        for(int i=0;i<value.length;i++){
+          get.add(value[i].toString());
         }
+         // pakcetLossText='🔵 Raw Received: '+get.toString();
+        update();
+
+        Map<String, dynamic> jsonData = jsonDecode(receivedString);
+        List<dynamic> signalValues = jsonData['s'];
+        var packetId=jsonData['id'];
+         // ✅ Packet loss detection logic
+         if (previousPacketId != -1) {
+           int expectedId = (previousPacketId + 1) % 10;
+           if (packetId != expectedId) {
+             lostPacketCount++;
+              pakcetLossText='⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
+
+             print("⚠️ Packet loss detected! Expected $expectedId but got $packetId");
+             // showDialog(
+             //   context: Get.context!,
+             //   builder: (_) => AlertDialog(
+             //     title: Text('Packet Loss Detected'),
+             //     content: Text('Expected: $expectedId, Received: $packetId\n'
+             //         'Total Lost Packets: $lostPacketCount'),
+             //     actions: [
+             //       TextButton(
+             //         onPressed: () => Navigator.pop(Get.context!),
+             //         child: Text('OK'),
+             //       ),
+             //     ],
+             //   ),
+             // );
+           }
+         }
+         previousPacketId = packetId;
+
+        for (var i = 0; i < signalValues.length; i++) {
+          double val = signalValues[i].toDouble();
+          cycleDataEnhance(globalTime, val);
+          print('⏱ Sending to graph: Time = $globalTime, Value = $val');
+          globalTime += 0.32; // increment by 0.4 seconds for each value
+        }
+
+        // String receivedData = utf8.decode(value);
+        // String cleanedData = receivedData.replaceAll(RegExp(r'[\[\]]'), '');
+        // List<String> packets = cleanedData.split('),(');
+        // double? timeStamp;
+        // double? voltage;
+        // for(var packet in packets){
+        //   String cleanedObject = packet.replaceAll(RegExp(r'[()]'), '');
+        //   List<String> values = cleanedObject.split(',');
+        //      if(values.length==2){
+        //         timeStamp = double.tryParse(values[0].trim());
+        //         voltage = double.tryParse(values[1].trim());
+        //          if (timeStamp != null && voltage != null) {
+        //             cycleDataEnhance(timeStamp,voltage);
+        //          } else {
+        //             AlertDialog(
+        //               title: Text('Error'),
+        //               content: Text('Invalid data received$value'),
+        //             );
+        //          }
+        //      }
+        // }
         update();
       });
     } catch (e) {
       print("Error while setting up notifications: $e");
+      AlertDialog(
+        title: Text('Error'),
+        content: Text('Error while setting up notifications: $e'),
+      );
     }
   }
 

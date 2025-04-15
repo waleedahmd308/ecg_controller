@@ -14,6 +14,7 @@ dependencies:
   permission_handler: 11.3.1
   excel: 4.0.6
   path_provider: 2.1.5
+  device_preview: 1.2.0
   flutter: 
     sdk: flutter
 
