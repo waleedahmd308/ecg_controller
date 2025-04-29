@@ -17,7 +17,7 @@ class HomeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("Live ECG Monitoring"),
+        title: Text("Live ECG Monitoring v1.7"),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -155,8 +155,12 @@ class testWidget extends StatelessWidget {
           builder: (context) {
             return Column(
               children: [
-                 Text(ecgController.pakcetLossText.toString()),
-                // Text(ecgController.targetCharacteristic.toString()),
+                //Text(ecgController.characteristicsInfo.toString()),
+                 Text(ecgController.failedCheck.toString()),
+                 Text(ecgController.receivedStringGlobal.toString()),
+                 Text(ecgController.firstTryNoError.toString()),
+                 Text(ecgController.counter.toString()),
+               // ElevatedButton(onPressed: ecgController.connectAndListenToDevice, child: Text("Connect and Listen to Device")
 
 
                 // Add more widgets or data as needed

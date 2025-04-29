@@ -63,7 +63,7 @@ class HomeController extends GetxController {
 
 
   void toggleStartStop() {
-     
+
     if(startShowingGraph==false){
       showingLoader=true;
 
@@ -73,11 +73,23 @@ class HomeController extends GetxController {
       });
     }
 
-    
+
     startShowingGraph = !startShowingGraph;
     update();
 
   }
+
+  Future<void> stopReceivingData() async {
+    if (targetCharacteristic != null) {
+      try {
+        await targetCharacteristic!.setNotifyValue(false);
+        print("🛑 Unsubscribed from notifications.");
+      } catch (e) {
+        print("Error while stopping notifications: $e");
+      }
+    }
+  }
+
   void showNoBlueToothDilouge(){
 
     if(FlutterBluePlus.isOn==false){
@@ -217,52 +229,113 @@ class HomeController extends GetxController {
       deviceConnected=false;
       startShowingGraph=false;
       update();
+      update();
     }
   }
   String getServices='';
+  String failedCheck='';
+  String characteristicsInfo = '';
   BluetoothCharacteristic? ackCharacteristic;
-  Future<void> connectToDevice(BluetoothDevice device) async {
-    // loader=true;
-    // update();
-    // try{
-     await device.connect();
-    loader=false;
-    update();
-    connectedDevice = device;
-    startShowingGraph=true;
+    Future<void> connectToDevice(BluetoothDevice device) async {
+      // loader=true;
+      // update();
+      try {
+        await device.connect();
 
-  // show dilog
-    Get.snackbar('Success', 'Connected to ${device.name}');
-     // int mtu = await device.requestMtu(245);
-     // AlertDialog(
-     //   title: Text('MTU requested'),
-     //   content: Text('MTU requested: $mtu'),
-     // );
+           await Future.delayed(Duration(milliseconds: 300));
+           print('MTU requested hua h: 247');
+        await device.requestMtu(245);
+        await Future.delayed(Duration(milliseconds: 500));
 
-    deviceConnected=true;
-    update();
-    List<BluetoothService> services = await device.discoverServices();
-    print('Discovered services: $services');
-   // getServices=services.toString();
-    update();
-     for (var service in services) {
-       for (var characteristic in service.characteristics) {
-         final uuid = characteristic.uuid.toString().toLowerCase();
-         if (uuid  == '19b10001-e8f2-537e-4f6c-d104768a1214') {
-           targetCharacteristic = characteristic;
-           print('Target characteristic set: ${targetCharacteristic!.uuid}');
-           break;
-         }
-         else if (uuid == '19b10002-e8f2-537e-4f6c-d104768a1214') {
-           ackCharacteristic = characteristic;
-           print('📤 Ack Characteristic set: ${characteristic.uuid}');
-         }
-       }
-       if (targetCharacteristic != null) break;
+
+
+         print('Connected to device: ${device.name}');
+         List<BluetoothService> services = await device.discoverServices();
+
+        // loader = false;
+        // update();
+        // connectedDevice = device;
+        // startShowingGraph = true;
+        //
+
+        //
+        //  failedCheck='MTU requested: 247';
+        //  print('MTU requested: 247');
+        //  update();
+
+
+        // show dilog
+        Get.snackbar('Success', 'Connected to ${device.name}');
+        // int mtu = await device.requestMtu(245);
+        // AlertDialog(
+        //   title: Text('MTU requested'),
+        //   content: Text('MTU requested: $mtu'),
+        // );
+
+
+        // deviceConnected = true;
+        // update();
+        // await Future.delayed(Duration(milliseconds: 500)); // before discovering services
+        //
+        //   List<BluetoothService> services = await device.discoverServices();
+        //   return ;
+
+        // print('Discovered services:');
+        // getServices=services.toString();
+        // update();
+
+
+       // return;
+        characteristicsInfo = ''; // Clear before adding new
+        for (var service in services) {
+          for (var characteristic in service.characteristics) {
+            final uuid = characteristic.uuid.toString();
+            final props = characteristic.properties;
+
+            characteristicsInfo +=
+            'UUID: $uuid\n'
+                '  read: ${props.read}, write: ${props.write}, '
+                'writeWithoutResponse: ${props.writeWithoutResponse}, notify: ${props.notify}\n\n';
+
+            if (uuid.toLowerCase() == '19b10001-e8f2-537e-4f6c-d104768a1214') {
+              targetCharacteristic = characteristic;
+            }
+            else if (uuid.toLowerCase() == '19b10002-e8f2-537e-4f6c-d104768a1214') {
+              ackCharacteristic = characteristic;
+            }
+          }
+        }
+        update();
+
+        for (var service in services) {
+          for (var characteristic in service.characteristics) {
+            final uuid = characteristic.uuid.toString().toLowerCase();
+            if (uuid == '19b10001-e8f2-537e-4f6c-d104768a1214') {
+              targetCharacteristic = characteristic;
+              print('Target characteristic set: ${targetCharacteristic!.uuid}');
+              break;
+            }
+            else if (uuid == '19b10002-e8f2-537e-4f6c-d104768a1214') {
+              ackCharacteristic = characteristic;
+              print('📤 Ack Characteristic set: ${characteristic.uuid}');
+            }
+          }
+          if (targetCharacteristic != null) break;
+        }
+        failedCheck='target characteristic set: ${targetCharacteristic} + ack charteric set: ${ackCharacteristic}';
+        update();
+        connectAndListenToDevice();
+      } catch (e) {
+
+        print('Error connecting to device: $e');
+        loader = false;
+        failedCheck='Failed to connect to device: $e';
+        update();
+       // Get.snackbar('Error', 'Failed to connect to ${device.name}');
+
+      }
+
      }
-    connectAndListenToDevice();
-
-   }
   //int fakePacketId = 1;
   // Map<String, dynamic> generateFakePacket(int id) {
   //   Random random = Random();
@@ -300,103 +373,125 @@ class HomeController extends GetxController {
   //
   //     fakePacketId++;
   //   });
-  // }
+  // }    W2```````````````````````````````````````````````
   double globalTime = 0.0;
   String pakcetLossText='🔵 No Raw Received (testing)';
+
 
   int previousPacketId = -1; // initialize with an invalid starting value
   int lostPacketCount = 0;
 
+
+  String receivedStringGlobal='';
+  String noError='';
+
+  String firstTryNoError='';
+  String firstTryError='';
+
+  int counter=0;
+
   Future<void> connectAndListenToDevice() async {
-
-
-    if (targetCharacteristic == null) {
-      print("No target characteristic found.");
-      AlertDialog(
-        title: Text('Error'),
-        content: Text('No target characteristic found.'),
-      );
+    if (targetCharacteristic == null || ackCharacteristic == null) {
+      print("Missing characteristic.");
+      failedCheck='Target characteristic is null + ack characteristic is null';
       return;
     }
+    else{
+      failedCheck='Target characteristic is not null + ack characteristic is not null';
+      update();
+    }
+
     try {
-
       await targetCharacteristic!.setNotifyValue(true);
-
       targetCharacteristic!.onValueReceived.listen((value) async {
-         String receivedString = utf8.decode(value);
-        print('🔵 Raw Received: $value');
-        List<String> get=[];
-        for(int i=0;i<value.length;i++){
-          get.add(value[i].toString());
+        receivedStringGlobal='🔵 Raw Received: ${utf8.decode(value)}';
+        try {
+          print('🟡 Sending ACK...');
+
+          await ackCharacteristic!.write(
+            utf8.encode(jsonEncode({"r": counter})),
+            withoutResponse: false,
+          );
+          failedCheck='✅ ACK sent';
+          update();
+        } catch (e) {
+          print('❌ Failed to send ACK: $e');
+          failedCheck='❌ Failed to send ACK: $e';
+          update();
         }
-         // pakcetLossText='🔵 Raw Received: '+get.toString();
+
+        print('✅ ACK sent to device');
+        counter++;
         update();
 
-        Map<String, dynamic> jsonData = jsonDecode(receivedString);
-        List<dynamic> signalValues = jsonData['s'];
-        var packetId=jsonData['id'];
-         // ✅ Packet loss detection logic
-         if (previousPacketId != -1) {
-           int expectedId = (previousPacketId + 1) % 10;
-           if (packetId != expectedId) {
-             lostPacketCount++;
-              pakcetLossText='⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
 
-             print("⚠️ Packet loss detected! Expected $expectedId but got $packetId");
-             // showDialog(
-             //   context: Get.context!,
-             //   builder: (_) => AlertDialog(
-             //     title: Text('Packet Loss Detected'),
-             //     content: Text('Expected: $expectedId, Received: $packetId\n'
-             //         'Total Lost Packets: $lostPacketCount'),
-             //     actions: [
-             //       TextButton(
-             //         onPressed: () => Navigator.pop(Get.context!),
-             //         child: Text('OK'),
-             //       ),
-             //     ],
-             //   ),
-             // );
-           }
-         }
-         previousPacketId = packetId;
+         // Future.microtask(() {
+         //
+         //   try{
+         //     String receivedString = utf8.decode(value);
+         //     // print('🔵 Raw Received: $value');
+         //     // failedCheck='🔵Raw Received: $value';
+         //
+         //     Map<String, dynamic> jsonData = jsonDecode(receivedString);
+         //     L     ist<dynamic> signalValues = jsonData['s'];
+         //
+         //     var packetId = jsonData['id'];
+         //     // receivedStringGlobal+="🔵 Data Received "+receivedString;
+         //     noError='✅ Received: String Assign to recievedString';
+         //     update();
+         //   } catch(e){
+         //     print('Error in onValueReceived: $e');
+         //     noError='❌ Error in onValueReceived: $e';
+         //      update();
+         //   }
+         //
+         // });
 
+
+        // Packet loss logic
+        // if (previousPacketId != -1) {
+        //   int expectedId = (previousPacketId + 1) % 10;
+        //   if (packetId != expectedId) {
+        //     lostPacketCount++;
+        //     pakcetLossText =
+        //     '⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
+        //     print(pakcetLossText);
+        //   }
+        // }
+      //  previousPacketId = packetId;
+
+        // Process signal values
+              String receivedString = utf8.decode(value);
+              // print('🔵 Raw Received: $value');
+              // failedCheck='🔵Raw Received: $value';
+
+              Map<String, dynamic> jsonData = jsonDecode(receivedString);
+              List<dynamic> signalValues = jsonData['s'];
+
+              //var packetId = jsonData['id'];
+               receivedStringGlobal+="🔵 Data Received "+receivedString;
+              // noError='✅ Received: String Assign to recievedString';
+               update();
         for (var i = 0; i < signalValues.length; i++) {
           double val = signalValues[i].toDouble();
           cycleDataEnhance(globalTime, val);
-          print('⏱ Sending to graph: Time = $globalTime, Value = $val');
-          globalTime += 0.32; // increment by 0.4 seconds for each value
+          noError='⏱ Sending to graph: Time = $globalTime, Value = $val';
+          update();
+          globalTime += 0.32;
         }
 
-        // String receivedData = utf8.decode(value);
-        // String cleanedData = receivedData.replaceAll(RegExp(r'[\[\]]'), '');
-        // List<String> packets = cleanedData.split('),(');
-        // double? timeStamp;
-        // double? voltage;
-        // for(var packet in packets){
-        //   String cleanedObject = packet.replaceAll(RegExp(r'[()]'), '');
-        //   List<String> values = cleanedObject.split(',');
-        //      if(values.length==2){
-        //         timeStamp = double.tryParse(values[0].trim());
-        //         voltage = double.tryParse(values[1].trim());
-        //          if (timeStamp != null && voltage != null) {
-        //             cycleDataEnhance(timeStamp,voltage);
-        //          } else {
-        //             AlertDialog(
-        //               title: Text('Error'),
-        //               content: Text('Invalid data received$value'),
-        //             );
-        //          }
-        //      }
-        // }
+
+        // ✅ Send ACK after processing
+
+
+
+        firstTryNoError='✅ ACK sent to device (outer try)';
         update();
       });
     } catch (e) {
       print("Error while setting up notifications: $e");
-      AlertDialog(
-        title: Text('Error'),
-        content: Text('Error while setting up notifications: $e'),
-      );
+      firstTryNoError='✅Error (outer try): $e';
+      update();
     }
   }
 
