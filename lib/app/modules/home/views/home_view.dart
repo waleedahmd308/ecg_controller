@@ -156,10 +156,12 @@ class testWidget extends StatelessWidget {
             return Column(
               children: [
                 //Text(ecgController.characteristicsInfo.toString()),
-                 Text(ecgController.failedCheck.toString()),
-                 Text(ecgController.receivedStringGlobal.toString()),
-                 Text(ecgController.firstTryNoError.toString()),
-                 Text(ecgController.counter.toString()),
+                 Text(ecgController.ackTry.toString()),
+                 Text("ack-count:${ecgController.ackCount.toString()}"),
+                //  Text(ecgController.ftime.toString()),
+                // Text(ecgController.Stime.toString()),
+                Text(ecgController.valueTry.toString()),
+                 Text("value-count:${ecgController.counter.toString()}")
                // ElevatedButton(onPressed: ecgController.connectAndListenToDevice, child: Text("Connect and Listen to Device")
 
 

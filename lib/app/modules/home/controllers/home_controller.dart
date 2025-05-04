@@ -273,8 +273,8 @@ class HomeController extends GetxController {
         // );
 
 
-        // deviceConnected = true;
-        // update();
+        deviceConnected = true;
+        update();
         // await Future.delayed(Duration(milliseconds: 500)); // before discovering services
         //
         //   List<BluetoothService> services = await device.discoverServices();
@@ -324,7 +324,7 @@ class HomeController extends GetxController {
         }
         failedCheck='target characteristic set: ${targetCharacteristic} + ack charteric set: ${ackCharacteristic}';
         update();
-        connectAndListenToDevice();
+        connectAndListenToDevice2();
       } catch (e) {
 
         print('Error connecting to device: $e');
@@ -385,115 +385,226 @@ class HomeController extends GetxController {
   String receivedStringGlobal='';
   String noError='';
 
-  String firstTryNoError='';
-  String firstTryError='';
+  String valueTry='';
+  String ackTry='';
+  int ackCount=0;
 
   int counter=0;
 
-  Future<void> connectAndListenToDevice() async {
+  String ftime='';
+  String Stime='';
+  String isNotifyingSet='';
+  String packetIdToShow='';
+  // Future<void> connectAndListenToDevice3() async {
+  //   ftime="🔌 [${DateTime.now()}] Starting connection...";
+  //   update;
+  //
+  //   if (targetCharacteristic == null || ackCharacteristic == null) {
+  //     print("Missing characteristic.");
+  //     failedCheck='Target characteristic is null + ack characteristic is null';
+  //     return;
+  //   }
+  //   else{
+  //     failedCheck='Target characteristic is not null + ack characteristic is not null';
+  //     update();
+  //   }
+  //
+  //   try {
+  //     Stime="🔌 [${DateTime.now()}] Subscribing to notifications...";
+  //     update();
+  //     Timer.periodic(Duration(seconds: 2), (timer) async {
+  //       if (targetCharacteristic == null) return;
+  //       bool isNotifying = await targetCharacteristic!.isNotifying;
+  //       if (!isNotifying) {
+  //         await targetCharacteristic!.setNotifyValue(true);
+  //         print('🔁 Re-subscribed to notifications');
+  //       }
+  //     });
+  //     targetCharacteristic!.onValueReceived.listen((value) async {
+  //       receivedStringGlobal='🔵 Raw Received: ${utf8.decode(value)}';
+  //        ackCharacteristic!.write(
+  //         utf8.encode(jsonEncode({"r": 'ack'})),
+  //       );
+  //       print('✅ ACK sent to device');
+  //       counter++;
+  //       update();
+  //       // try {
+  //       //   print('🟡 Sending ACK...');
+  //       //
+  //       //   await ackCharacteristic!.write(
+  //       //     utf8.encode(jsonEncode({"r": counter})),
+  //       //     withoutResponse: false,
+  //       //   );
+  //       //   failedCheck='✅ ACK sent';
+  //       //   update();
+  //       // } catch (e) {
+  //       //   print('❌ Failed to send ACK: $e');
+  //       //   failedCheck='❌ Failed to send ACK: $e';
+  //       //   update();
+  //       // }
+  //
+  //
+  //
+  //        // Future.microtask(() {
+  //        //
+  //        //   try{
+  //        //     String receivedString = utf8.decode(value);
+  //        //     // print('🔵 Raw Received: $value');
+  //        //     // failedCheck='🔵Raw Received: $value';
+  //        //
+  //        //     Map<String, dynamic> jsonData = jsonDecode(receivedString);
+  //        //     L     ist<dynamic> signalValues = jsonData['s'];
+  //        //
+  //        //     var packetId = jsonData['id'];
+  //        //     // receivedStringGlobal+="🔵 Data Received "+receivedString;
+  //        //     noError='✅ Received: String Assign to recievedString';
+  //        //     update();
+  //        //   } catch(e){
+  //        //     print('Error in onValueReceived: $e');
+  //        //     noError='❌ Error in onValueReceived: $e';
+  //        //      update();
+  //        //   }
+  //        //
+  //        // });
+  //
+  //
+  //       // Packet loss logic
+  //       // if (previousPacketId != -1) {
+  //       //   int expectedId = (previousPacketId + 1) % 10;
+  //       //   if (packetId != expectedId) {
+  //       //     lostPacketCount++;
+  //       //     pakcetLossText =
+  //       //     '⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
+  //       //     print(pakcetLossText);
+  //       //   }
+  //       // }
+  //       // previousPacketId = packetId;
+  //
+  //       // Process signal values
+  //            String receivedString = utf8.decode(value);
+  //             print('🔵 Raw Received: $value');
+  //             failedCheck='🔵Raw Received: $value';
+  //
+  //             Map<String, dynamic> jsonData = jsonDecode(receivedString);
+  //             List<dynamic> signalValues = jsonData['s'];
+  //
+  //             var packetId = jsonData['id'];
+  //             noError='✅ Received: String Assign to recievedString';
+  //
+  //       // for (var i = 0; i < signalValues.length; i++) {
+  //       //   double val = signalValues[i].toDouble();
+  //       //   cycleDataEnhance(globalTime, val);
+  //       //   noError='⏱ Sending to graph: Time = $globalTime, Value = $val';
+  //       //   update();
+  //       //   globalTime += 0.32;
+  //       // }
+  //       if (previousPacketId != -1) {
+  //         int expectedId = (previousPacketId + 1) % 10;
+  //         if (packetId != expectedId) {
+  //           lostPacketCount++;
+  //           pakcetLossText =
+  //           '⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
+  //           print(pakcetLossText);
+  //         }
+  //          = packetId.toString();
+  //
+  //       }
+  //       previousPacketId = packetId;
+  //
+  //
+  //       // ✅ Send ACK after processing
+  //
+  //
+  //
+  //       // firstTryNoError='✅ ACK sent to device (outer try)';
+  //       // update();
+  //       //thirdtime="🔌 [${DateTime.now()}] and is Notifying [${targetCharacteristic!.isNotifying}]";
+  //       update();
+  //     });
+  //   } catch (e) {
+  //     print("Error while setting up notifications: $e");
+  //     firstTryNoError='✅Error (outer try): $e';
+  //     update();
+  //   }
+  // }
+
+  Future<void> connectAndListenToDevice2() async {
+    ftime = "🔌 [${DateTime.now()}] Starting connection...";
+    update();
+
     if (targetCharacteristic == null || ackCharacteristic == null) {
       print("Missing characteristic.");
-      failedCheck='Target characteristic is null + ack characteristic is null';
+      failedCheck = 'Target characteristic is null + ack characteristic is null';
       return;
-    }
-    else{
-      failedCheck='Target characteristic is not null + ack characteristic is not null';
+    } else {
+      failedCheck = 'Target characteristic is not null + ack characteristic is not null';
       update();
     }
 
     try {
-      await targetCharacteristic!.setNotifyValue(true);
+      Stime = "🔌 [${DateTime.now()}] Subscribing to notifications...";
+      update();
+
+      Timer.periodic(Duration(seconds: 1), (timer) async {
+        if (targetCharacteristic == null) return;
+        bool isNotifying = await targetCharacteristic!.isNotifying;
+        if (!isNotifying) {
+          isNotifyingSet = '🔁 isNotifying is false, re-subscribing...';
+          update();
+
+          await targetCharacteristic!.setNotifyValue(true);
+          print('🔁 Re-subscribed to notifications');
+          isNotifyingSet = '🔁 isNotifying is false, re-subscribing...';
+          update();
+        }
+        else{
+          isNotifyingSet = '🔁 isNotifying is already set';
+          update();
+        }
+      });
+
       targetCharacteristic!.onValueReceived.listen((value) async {
-        receivedStringGlobal='🔵 Raw Received: ${utf8.decode(value)}';
+        // String receivedString = utf8.decode(value);
+        // receivedStringGlobal = '🔵 Raw Received: $receivedString';
+        // failedCheck = '🔵 Raw Received: $value';
+
+        // Send ACK
         try {
-          print('🟡 Sending ACK...');
-
-          await ackCharacteristic!.write(
-            utf8.encode(jsonEncode({"r": counter})),
-            withoutResponse: false,
+          ackCharacteristic!.write(
+            utf8.encode(jsonEncode({"r": 'ack'})),
           );
-          failedCheck='✅ ACK sent';
-          update();
-        } catch (e) {
-          print('❌ Failed to send ACK: $e');
-          failedCheck='❌ Failed to send ACK: $e';
+          print('✅ ACK sent to device');
+          ackTry = '✅ ACK sent to device';
+          ackCount++;
           update();
         }
+        catch(e){
+          print('Error while sending ACK: $e');
+          ackTry='❌ Failed to send ACK: $e';
+          update();
 
-        print('✅ ACK sent to device');
-        counter++;
+        }
+        if(value.isEmpty){
+          print('❌ Empty value received');
+          valueTry='❌ Empty value received';
+
+        }
+        else{
+          counter++;
+          valueTry='✅ Value received';
+          receivedStringGlobal = '🔵 Raw Received: ${utf8.decode(value)}';
+        }
+
         update();
 
 
-         // Future.microtask(() {
-         //
-         //   try{
-         //     String receivedString = utf8.decode(value);
-         //     // print('🔵 Raw Received: $value');
-         //     // failedCheck='🔵Raw Received: $value';
-         //
-         //     Map<String, dynamic> jsonData = jsonDecode(receivedString);
-         //     L     ist<dynamic> signalValues = jsonData['s'];
-         //
-         //     var packetId = jsonData['id'];
-         //     // receivedStringGlobal+="🔵 Data Received "+receivedString;
-         //     noError='✅ Received: String Assign to recievedString';
-         //     update();
-         //   } catch(e){
-         //     print('Error in onValueReceived: $e');
-         //     noError='❌ Error in onValueReceived: $e';
-         //      update();
-         //   }
-         //
-         // });
-
-
-        // Packet loss logic
-        // if (previousPacketId != -1) {
-        //   int expectedId = (previousPacketId + 1) % 10;
-        //   if (packetId != expectedId) {
-        //     lostPacketCount++;
-        //     pakcetLossText =
-        //     '⚠️ Packet loss detected! Expected: $expectedId, Received: $packetId, Total Lost: $lostPacketCount';
-        //     print(pakcetLossText);
-        //   }
-        // }
-      //  previousPacketId = packetId;
-
-        // Process signal values
-              String receivedString = utf8.decode(value);
-              // print('🔵 Raw Received: $value');
-              // failedCheck='🔵Raw Received: $value';
-
-              Map<String, dynamic> jsonData = jsonDecode(receivedString);
-              List<dynamic> signalValues = jsonData['s'];
-
-              //var packetId = jsonData['id'];
-               receivedStringGlobal+="🔵 Data Received "+receivedString;
-              // noError='✅ Received: String Assign to recievedString';
-               update();
-        for (var i = 0; i < signalValues.length; i++) {
-          double val = signalValues[i].toDouble();
-          cycleDataEnhance(globalTime, val);
-          noError='⏱ Sending to graph: Time = $globalTime, Value = $val';
-          update();
-          globalTime += 0.32;
-        }
-
-
-        // ✅ Send ACK after processing
-
-
-
-        firstTryNoError='✅ ACK sent to device (outer try)';
-        update();
       });
     } catch (e) {
       print("Error while setting up notifications: $e");
-      firstTryNoError='✅Error (outer try): $e';
       update();
     }
   }
+
 
   Map<String, dynamic> parseJsonData(String jsonData) {
     return jsonData.startsWith('{') ? Map<String, dynamic>.from(jsonDecode(jsonData)) : {};
