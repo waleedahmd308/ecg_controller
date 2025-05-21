@@ -102,7 +102,7 @@ class HomeController extends GetxController {
 
   }
   int index=0;
-  final int maxTimeStamps=250;
+  final int maxTimeStamps=50;
   List<Color> chartColors = [];
 
 
@@ -398,6 +398,7 @@ class HomeController extends GetxController {
   String Stime='';
   String isNotifyingSet='';
   String packetIdToShow='';
+  int packetLossCount=0;
   Future<void> connectAndListenToDevice3() async {
     ftime = "🔌 [${DateTime.now()}] Starting connection...";
     update();
@@ -414,32 +415,62 @@ class HomeController extends GetxController {
     try {
       await targetCharacteristic!.setNotifyValue(true);
 
+      int? lastId; // Add this to your state class
+
       targetCharacteristic!.onValueReceived.listen((value) async {
         try {
-          String receivedString = utf8.decode(value);
+          // Clean null characters and decode
+          String receivedString = utf8.decode(value).replaceAll('\u0000', '').trim();
           receivedStringGlobal = '🔵 Raw Received: $receivedString';
           update();
 
-          // Try parsing the received string as JSON
-          final decoded = json.decode(receivedString);
+          // Ensure valid JSON bounds
+          int startIndex = receivedString.indexOf('{');
+          int endIndex = receivedString.lastIndexOf('}');
 
-          if (decoded is Map && decoded.containsKey('s')) {
-            List<dynamic> values = decoded['s'];
+          if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+            String jsonString = receivedString.substring(startIndex, endIndex + 1);
 
-            List<double> signalValues = values.map((v) => (v as num).toDouble()).toList();
+            final decoded = json.decode(jsonString);
 
-            noError = '✅ Parsed ${signalValues.length} values';
-            update();
+            if (decoded is Map && decoded.containsKey('s') && decoded.containsKey('id')) {
+              // 🆔 Get current packet ID
+              int currentId = decoded['id'];
 
-            for (var i = 0; i < signalValues.length; i++) {
-              double val = signalValues[i];
-              cycleDataEnhance(globalTime, val);
-              noError = '⏱ Sending to graph: Time = $globalTime, Value = $val';
+              // 📦 Detect packet loss
+              if (lastId != null) {
+                int expectedId = (lastId! + 1) % 10;
+                if (currentId != expectedId) {
+                  failedCheck = '⚠️ Packet loss detected! Expected ID: $expectedId, but got: $currentId';
+                  packetLossCount++;
+                  update();
+                }
+              }
+              lastId = currentId;
+
+              // 📉 Process signal values
+              List<dynamic> values = decoded['s'];
+              List<double> signalValues = values
+                  .where((v) => v != null)
+                  .map((v) => (v as num).toDouble())
+                  .toList();
+
+              noError = '✅ Parsed ${signalValues.length} values';
               update();
-              globalTime += 0.1;
+
+              for (var i = 0; i < signalValues.length; i++) {
+                double val = signalValues[i];
+                cycleDataEnhance(globalTime, val);
+                noError = '⏱ Sending to graph: Time = $globalTime, Value = $val';
+                update();
+                globalTime += 0.56;
+              }
+            } else {
+              failedCheck = '❌ Invalid JSON or missing keys';
+              update();
             }
           } else {
-            failedCheck = '❌ Invalid JSON format or missing "s" key';
+            failedCheck = '❌ Invalid JSON boundaries';
             update();
           }
         } catch (e) {

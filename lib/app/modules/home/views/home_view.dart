@@ -54,7 +54,7 @@ class HomeView extends StatelessWidget {
                   SizedBox(height: constraints.maxHeight * 0.02), // 2% vertical spacing
                   ecgGraphWidget(graphHeight, graphWidth),
                   SizedBox(height: constraints.maxHeight * 0.02),
-                  // DashBoardIcons(),
+                   DashBoardIcons(),
                   testWidget(),
                   SizedBox(height: constraints.maxHeight * 0.02),
                   HomeStopStartButton(),
@@ -155,10 +155,10 @@ class testWidget extends StatelessWidget {
           builder: (context) {
             return Column(
               children: [
-                Text(ecgController.receivedStringGlobal.toString()),
+               // Text(ecgController.receivedStringGlobal.toString()),
                //  Text(ecgController.pakcetLossText.toString()),
-                 Text("no error :${ecgController.noError.toString()}"),
-                 Text("no error :${ecgController.failedCheck.toString()}"),
+                // Text("no error :${ecgController.noError.toString()}"),
+                 Text("${ecgController.packetLossCount.toString()} packets loss"),
                 //  Text(ecgController.ftime.toString()),
                 // Text(ecgController.Stime.toString()),
             //    Text(ecgController.valueTry.toString()),

@@ -13,7 +13,7 @@ class DashBoardIcons extends StatelessWidget {
     return Column(
       children: [
         Container(
-          color: Colors.grey[200],
+          color: Colors.blue[800],
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -26,7 +26,7 @@ class DashBoardIcons extends StatelessWidget {
         ),
         // const SizedBox(height: 6),
         Container(
-          color: Colors.grey[200],
+          color: Colors.blue[800],
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -39,7 +39,7 @@ class DashBoardIcons extends StatelessWidget {
         ),
         // const SizedBox(height: 6),
         Container(
-          color: Colors.grey[200],
+          color: Colors.blue[800],
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -83,7 +83,7 @@ class ParameterDisplay extends StatelessWidget {
             style: TextStyle(
               fontSize: 12, // Smaller font size for title
               fontWeight: FontWeight.bold,
-              color: Colors.grey[600], // Lighter color
+              color: Colors.white, // Lighter color
             ),
           ),
           const SizedBox(height: 4),
@@ -94,7 +94,7 @@ class ParameterDisplay extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18, // Larger font size for value
                 fontWeight: FontWeight.bold,
-                color: Colors.black, // Dark color for value
+                color: Colors.white, // Dark color for value
               ),
               children: [
                 if (unit != null)
@@ -103,7 +103,7 @@ class ParameterDisplay extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16, // Slightly smaller for the unit
                       fontWeight: FontWeight.normal,
-                      color: Colors.grey[600],
+                      color: Colors.white,
                     ),
                   ),
               ],
